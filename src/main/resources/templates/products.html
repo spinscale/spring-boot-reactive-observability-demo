@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/base}">
+
+<head>
+    <title>Products Page</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <table th:if="${!products.isEmpty()}">
+        <thead>
+          <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Tags</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr th:each="product : ${products}">
+                <td><img th:if="product.imageUrl != null" th:src="${product.imageUrl}" /></td>
+                <td><a th:href="${'/products/product/' + product.id}" th:text="${product.name}"></a></td>
+                <td th:text="${product.description}"></td>
+                <td><div th:each="tag : ${product.tags}"><span th:text="${tag}" /></div></td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>
