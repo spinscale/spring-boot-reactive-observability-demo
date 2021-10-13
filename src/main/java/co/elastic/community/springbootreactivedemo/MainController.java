@@ -24,4 +24,9 @@ public class MainController {
         return Mono.just(rendering);
     }
 
+    // artifical controller for throwing an exception in the logs
+    @GetMapping("/exception")
+    public Mono<Rendering> exception() {
+        throw new RuntimeException("a wild runtime exception occurs");
+    }
 }

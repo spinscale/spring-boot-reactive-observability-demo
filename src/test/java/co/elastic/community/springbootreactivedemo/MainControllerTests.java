@@ -64,4 +64,13 @@ public class MainControllerTests {
                     assertThat(exchangeResult.getResponseBody()).doesNotContain("</table>");
                 });
     }
+
+    @Test
+    public void testException() {
+        client.get().uri("/exception")
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(String.class)
+                .consumeWith(result -> assertThat(result.getResponseBody()).contains("\"timestamp\":"));
+    }
 }
