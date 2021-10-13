@@ -9,6 +9,32 @@ This is a demo project to add Elastic Observability step-by-step.
 Start an Elasticsearch node somewhere to store products for this sample
 application.
 
+If you are using a secured server (recommended), make sure to create a role,
+for example `springboot`, with the following privileges:
+
+```
+POST /_security/role/springboot
+{
+  "cluster": [ "monitor" ],
+  "indices": [
+    {
+      "names": [ "products" ],
+      "privileges": [ "all" ]
+    }
+  ]
+}
+```
+
+And assign this role to your user. You can create a dedicated user for this, let say `springboot`:
+
+```
+POST /_security/user/springboot
+{
+  "password" : "springb00t",
+  "roles" : [ "springboot" ]
+}
+```
+
 ### Start this application
 
 By default the Elasticsearch cluster is supposed to run under
@@ -31,6 +57,12 @@ Or you package the jar and run it
 ```
 ./gradlew clean check assemble
 java -jar build/libs/spring-boot-reactive-demo-0.0.1-SNAPSHOT.jar
+```
+
+If you are using Elastic Cloud as described earlier on, you can run:
+
+```sh
+ELASTICSEARCH_URL=https://springboot:springb00t@elastic-bys.es.europe-west1.gcp.cloud.es.io:9243/ ./gradlew bootRun
 ```
 
 ## The API
