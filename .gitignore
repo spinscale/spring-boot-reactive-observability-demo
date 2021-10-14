@@ -36,5 +36,12 @@ out/
 ### VS Code ###
 .vscode/
 
+### Terraform ###
+.terraform/
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+
+### Secrets ###
 .env
 .envrc
+elastic-cloud.yml
