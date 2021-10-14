@@ -39,7 +39,7 @@
 
 
     # Add users
-    - name: Add user
+    - name: Add users
       user:
         name: "{{ item }}"
         groups: sudo
@@ -67,9 +67,8 @@
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^AllowUsers'
-        line: '"AllowUsers ubuntu " item'
+        line: "AllowUsers ubuntu {{ users|join(' ') }}"
         state: present
-      loop: "{{ users }}"
 
     - name: Restart SSH
       service: name=ssh state=restarted
