@@ -30,15 +30,14 @@ public class ProductController {
     }
 
     @PutMapping("/product/{id}")
-    public Mono<String> createProduct(@PathVariable String id, @RequestBody Product product) throws MalformedURLException {
+    public Mono<Product> createProduct(@PathVariable String id,
+                                              @RequestBody Product product) throws MalformedURLException {
         product.setId(id);
         product.setCreated(ZonedDateTime.now(ZoneOffset.UTC));
         // cheap parsing check, this fails with an exception, if the product image url cannot be parsed!
         // could be done via annotation validation as well
         new URL(product.getImageUrl());
-        return repository
-                .save(product)
-                .thenReturn("redirect:/products/" + id);
+        return repository.save(product);
     }
 
     @GetMapping(value = "/product/{id}")
@@ -48,10 +47,8 @@ public class ProductController {
     }
 
     @DeleteMapping("/product/{id}")
-    public Mono<String> deleteProduct(@PathVariable String id) {
-        return repository
-                .deleteById(id)
-                .thenReturn("redirect:/");
+    public Mono<Void> deleteProduct(@PathVariable String id) {
+        return repository.deleteById(id);
     }
 
     @GetMapping(value = "/search")
