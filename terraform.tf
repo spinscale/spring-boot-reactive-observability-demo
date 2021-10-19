@@ -116,7 +116,9 @@ resource "local_file" "generated_config" {
     apm_host: ${ec_deployment.demo_ec.apm[0].https_endpoint}
     apm_secret_token: ${ec_deployment.demo_ec.apm_secret_token}
     elastic_version: ${ec_deployment.demo_ec.version}
+    beats_user: beats
     beats_password: ${random_password.beats.result}
+    springboot_user: springboot
     springboot_password: ${random_password.springboot.result}
     domain: ${var.domain}
     DOC

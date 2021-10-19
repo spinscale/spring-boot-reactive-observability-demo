@@ -1,0 +1,33 @@
+filebeat.modules:
+- module: auditd
+- module: nginx
+- module: system
+
+
+name: "{{ inventory_hostname }}"
+
+
+processors:
+- add_cloud_metadata: ~
+- add_host_metadata: ~
+
+
+monitoring.enabled: true
+
+
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_host }}"]
+  username: "{{ beats_user }}"
+  password: "{{ beats_password }}" #"${ES_PWD}"
+
+
+setup:
+  kibana:
+    host: "{{ kibana_host }}"
+    username: "{{ beats_user }}"
+    password: "{{ beats_password }}" #"${ES_PWD}"
+  ilm.overwrite: true
+
+
+#cloud.id: ""
+#cloud.auth: "{{ beats_user }}:${ES_PWD}"

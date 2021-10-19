@@ -6,6 +6,8 @@
 
   vars:
       users:
+        #- alex
+        - aravind
         - david
       beats:
         - filebeat
@@ -15,7 +17,7 @@
 
 
   vars_files:
-    - elastic-cloud.yml
+    - .config.yml
 
 
   tasks:
@@ -74,27 +76,119 @@
       service: name=ssh state=restarted
 
 
-    # Beats
-    - name: Set the Elasticsearch password for Beats
-      lineinfile:
-        dest: /tmp/cred
-        line: "{{ elasticsearch_password }}"
-        state: present
-        create: yes
-        mode: 0600
+    # Elasticsearch
+    - name: Create the Elasticsearch role for the app
+      uri:
+        url: "{{elasticsearch_host}}/_security/role/{{ springboot_user }}-role"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          cluster:
+            - monitor
+          indices:
+            - names:
+                - products
+              privileges:
+                - all
+        status_code:
+          - 200
+          - 201
 
+    - name: Create the Elasticsearch user for the app
+      uri:
+        url: "{{elasticsearch_host}}/_security/user/{{ springboot_user }}"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          password: "{{ springboot_password }}"
+          roles:
+            - "{{ springboot_user }}-role"
+        status_code:
+          - 200
+          - 201
+
+    - name: Create the Elasticsearch role for Beats
+      uri:
+        url: "{{elasticsearch_host}}/_security/role/{{ beats_user }}-role"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          cluster:
+            - all #TODO make this more fine grained
+          indices:
+            - names:
+                #- ".kibana*"
+                - "*beat-*"
+                - "logs-*"
+                - "metrics-*"
+              privileges:
+                - all
+          applications:
+            - application: kibana-.kibana
+              privileges:
+                - feature_indexPatterns.all
+                - feature_savedObjectsManagement.all
+                - feature_advancedSettings.all
+                - feature_actions.all
+                - feature_savedObjectsTagging.all
+                - feature_fleet.all
+                - feature_stackAlerts.all
+              resources:
+                - '*'
+        status_code:
+          - 200
+          - 201
+
+    - name: Create the Elasticsearch user for Beats
+      uri:
+        url: "{{elasticsearch_host}}/_security/user/{{ beats_user }}"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          password: "{{ beats_password }}"
+          roles:
+            - "{{ beats_user }}-role"
+        status_code:
+          - 200
+          - 201
+
+
+    # Agent
+
+
+
+    # Beats
     - name: Get the Beats
       apt: deb=https://artifacts.elastic.co/downloads/beats/{{ item }}/{{ item }}-{{ elastic_version }}-amd64.deb force_apt_get=yes
       loop: "{{ beats }}"
 
-
     - name: Change the Beats configuration
-      template: "src=templates/{{ item }}.yml dest=/etc/{{ item }}/{{ item }}.yml"
+      template: "src=ansible/{{ item }}.yml dest=/etc/{{ item }}/{{ item }}.yml"
       loop: "{{ beats }}"
 
     - name: Create the Beats keystores
       command: "{{ item }} keystore create --force"
       loop: "{{ beats }}"
+
+    - name: Set the Elasticsearch password for Beats
+      lineinfile:
+        dest: /tmp/cred
+        line: "{{ beats_password }}"
+        state: present
+        create: yes
+        mode: 0600
 
     - name: Set the password in the Beats keystore files
       shell: cat /tmp/cred | {{ item }} keystore add ES_PWD --stdin --force
@@ -114,7 +208,11 @@
 
     - name: Restart and make sure the Beats autostart
       service: name={{ item }} state=restarted enabled=yes
-      loop: "{{ beats }}"
+      loop:
+      - filebeat
+      - heartbeat-elastic #Different name, can't use the default list
+      - metricbeat
+      - packetbeat
 
 
     # nginx
@@ -148,16 +246,16 @@
         hour: "3"
         weekday: "0"
         month: "*/2"
-        job: service nginx stop && certbot renew >> /var/log//var/log/letsencrypt/renew.log && service nginx start
+        job: service nginx stop && certbot renew >> /var/log/letsencrypt/renew.log && service nginx start
 
     - name: Generate strong dhparams, but only if the file doesn't exist
       command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 creates=/etc/ssl/certs/dhparam.pem
 
     - name: Set a global TLS configuration
-      template: src=templates/tls.conf dest=/etc/nginx/tls.conf
+      template: src=ansible/tls.conf dest=/etc/nginx/tls.conf
 
     - name: Change the nginx configuration
-      template: src=templates/nginx.conf dest=/etc/nginx/sites-available/default
+      template: src=ansible/nginx.conf dest=/etc/nginx/sites-available/default
 
     - name: Restart nginx and make sure it autostarts
       service: name=nginx state=restarted enabled=yes
