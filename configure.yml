@@ -1,0 +1,285 @@
+- hosts: all
+  remote_user: ubuntu
+  become: true
+  gather_facts: yes
+
+
+  vars:
+      users:
+        #- alex
+        - aravind
+        - david
+      beats:
+        - filebeat
+        - heartbeat
+        - metricbeat
+        - packetbeat
+
+
+  vars_files:
+    - .config.yml
+
+
+  tasks:
+
+    # System
+    - name: Update and upgrade apt packages
+      apt: upgrade=dist force_apt_get=yes update_cache=yes
+
+    - name: Install NTP to avoid time drift and PIP to manage Python dependencies plus its build tools
+      apt:
+        name: [ 'ntp', 'ntpdate', 'python3-pip', 'build-essential', 'libssl-dev', 'libffi-dev', 'whois' ]
+
+    - name: Install the pyOpenSSL library, so Ansible can use it to check TLS certificates
+      pip: name=pyopenssl
+
+    - name: Install the JDK
+      apt: name=openjdk-17-jdk-headless install_recommends=no
+
+    - name: Install Gradle
+      apt: name=gradle
+
+
+    # Add users
+    - name: Add users
+      user:
+        name: "{{ item }}"
+        groups: sudo
+        shell: /bin/bash
+        state: present
+      loop: "{{ users }}"
+
+    - name: Placing the public SSH keys for the users
+      authorized_key:
+        user: "{{ item }}"
+        key: "{{ lookup('file', './ansible/' + item + '.pub') }}"
+      loop: "{{ users }}"
+
+
+    # SSH
+    - name: Allow passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Allow our users to log in via SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^AllowUsers'
+        line: "AllowUsers ubuntu {{ users|join(' ') }}"
+        state: present
+
+    - name: Restart SSH
+      service: name=ssh state=restarted
+
+
+    # Elasticsearch
+    - name: Create the Elasticsearch role for the app
+      uri:
+        url: "{{elasticsearch_host}}/_security/role/{{ springboot_user }}-role"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          cluster:
+            - monitor
+          indices:
+            - names:
+                - products
+              privileges:
+                - all
+        status_code:
+          - 200
+          - 201
+
+    - name: Create the Elasticsearch user for the app
+      uri:
+        url: "{{elasticsearch_host}}/_security/user/{{ springboot_user }}"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          password: "{{ springboot_password }}"
+          roles:
+            - "{{ springboot_user }}-role"
+        status_code:
+          - 200
+          - 201
+
+    - name: Create the Elasticsearch role for Beats
+      uri:
+        url: "{{elasticsearch_host}}/_security/role/{{ beats_user }}-role"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          cluster:
+            - all #TODO make this more fine grained
+          indices:
+            - names:
+                #- ".kibana*"
+                - "*beat-*"
+                - "logs-*"
+                - "metrics-*"
+              privileges:
+                - all
+          applications:
+            - application: kibana-.kibana
+              privileges:
+                - feature_indexPatterns.all
+                - feature_savedObjectsManagement.all
+                - feature_advancedSettings.all
+                - feature_actions.all
+                - feature_savedObjectsTagging.all
+                - feature_fleet.all
+                - feature_stackAlerts.all
+              resources:
+                - '*'
+        status_code:
+          - 200
+          - 201
+
+    - name: Create the Elasticsearch user for Beats
+      uri:
+        url: "{{elasticsearch_host}}/_security/user/{{ beats_user }}"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body:
+          password: "{{ beats_password }}"
+          roles:
+            - "{{ beats_user }}-role"
+        status_code:
+          - 200
+          - 201
+
+
+    # Agent
+
+
+
+    # Beats
+    - name: Get the Beats
+      apt: deb=https://artifacts.elastic.co/downloads/beats/{{ item }}/{{ item }}-{{ elastic_version }}-amd64.deb force_apt_get=yes
+      loop: "{{ beats }}"
+
+    - name: Change the Beats configuration
+      template: "src=ansible/{{ item }}.yml dest=/etc/{{ item }}/{{ item }}.yml"
+      loop: "{{ beats }}"
+
+    - name: Create the Beats keystores
+      command: "{{ item }} keystore create --force"
+      loop: "{{ beats }}"
+
+    - name: Set the Elasticsearch password for Beats
+      lineinfile:
+        dest: /tmp/cred
+        line: "{{ beats_password }}"
+        state: present
+        create: yes
+        mode: 0600
+
+    - name: Set the password in the Beats keystore files
+      shell: cat /tmp/cred | {{ item }} keystore add ES_PWD --stdin --force
+      loop: "{{ beats }}"
+
+    - name: Remove the password file
+      file:
+        path: /tmp/cred
+        state: absent
+
+    - name: Run the setup for all the beats (except Heartbeat — not needed)
+      shell: "{{ item }} setup"
+      loop:
+      - filebeat
+      - metricbeat
+      - packetbeat
+      ignore_errors: yes #TODO missing Filebeat permission for ML
+
+    - name: Restart and make sure the Beats autostart
+      service: name={{ item }} state=restarted enabled=yes
+      loop:
+      - filebeat
+      - heartbeat-elastic #Different name, can't use the default list
+      - metricbeat
+      - packetbeat
+
+
+    # nginx
+    - name: Install nginx
+      apt: name=nginx force_apt_get=yes
+
+    - name: Stop nginx so that Certbot can bind to port 80
+      service: name=nginx state=stopped
+
+    - name: Install certbot
+      apt: name=python3-certbot-nginx
+
+    - name: Add domains to the certificate
+      set_fact:
+        certificates:
+          - "{{ inventory_hostname }}"
+          - "{{ domain }}"
+          - "www.{{ domain }}"
+
+    - name: Create the certificate
+      command: >
+        certbot certonly --non-interactive --standalone
+        --agree-tos --email admin@{{ domain }}
+        -d {{ certificates | join(',') }}
+        creates=/etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem
+
+    - name: Add crontab to renew certificates every second month on Sunday night
+      cron:
+        name: Renew Let's Encrypt certificate
+        minute: "30"
+        hour: "3"
+        weekday: "0"
+        month: "*/2"
+        job: service nginx stop && certbot renew >> /var/log/letsencrypt/renew.log && service nginx start
+
+    - name: Generate strong dhparams, but only if the file doesn't exist
+      command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 creates=/etc/ssl/certs/dhparam.pem
+
+    - name: Set a global TLS configuration
+      template: src=ansible/tls.conf dest=/etc/nginx/tls.conf
+
+    - name: Change the nginx configuration
+      template: src=ansible/nginx.conf dest=/etc/nginx/sites-available/default
+
+    - name: Restart nginx and make sure it autostarts
+      service: name=nginx state=restarted enabled=yes
+
+    - name: Check HTTP
+      uri:
+        url: "http://{{ inventory_hostname }}"
+        follow_redirects: none
+        status_code: 301
+      register: response
+      retries: 3
+      delay: 2
+      delegate_to: 127.0.0.1
+      become: false
+
+    - name: Fail if HTTP is not being redirected to HTTPS
+      fail:
+      when: response.status != 301
+
+    - name: Check HTTPS
+      openssl_certificate:
+        path: /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem
+        provider: assertonly
+        subject_alt_name:
+          - "DNS:{{ inventory_hostname }}"
+          - "DNS:{{ domain }}"

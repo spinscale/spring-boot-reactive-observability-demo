@@ -1,0 +1,53 @@
+packetbeat.interfaces.device: any
+
+
+packetbeat.flows:
+  timeout: 30s
+  period: 10s
+
+
+packetbeat.protocols:
+- type: icmp
+  enabled: true
+- type: dns
+  ports: [53]
+- type: http
+  ports: [80]
+- type: tls
+  ports: [443]
+
+
+packetbeat.procs:
+  enabled: true
+  monitored:
+    - process: nginx
+      cmdline_grep: nginx
+
+
+name: "{{ inventory_hostname }}"
+
+
+processors:
+- add_cloud_metadata: ~
+- add_host_metadata: ~
+
+
+monitoring.enabled: true
+
+
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_host }}"]
+  username: "{{ beats_user }}"
+  password: "{{ beats_password }}" #"${ES_PWD}"
+
+
+setup:
+  kibana:
+    host: "{{ kibana_host }}"
+    username: "{{ beats_user }}"
+    password: "{{ beats_password }}" #"${ES_PWD}"
+  ilm.overwrite: true
+
+
+#cloud.id: ""
+#cloud.auth: "{{ beats_user }}:${ES_PWD}"

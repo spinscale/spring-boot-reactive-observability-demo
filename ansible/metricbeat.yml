@@ -1,0 +1,85 @@
+metricbeat.modules:
+- module: system
+  metricsets:
+    - cpu
+    - load
+    - core
+    - diskio
+    - filesystem
+    - fsstat
+    - memory
+    - network
+    - process
+    - process_summary
+    - socket
+  enabled: true
+  period: 10s
+  processes: ['.*']
+  cgroups: true
+  process.include_top_n:
+    enabled: true
+    by_cpu: 20
+    by_memory: 20
+- module: jolokia
+  metricsets: ["jmx"]
+  hosts: ["localhost:8080"]
+  namespace: metrics
+  jmx.mappings:
+    - mbean: "java.lang:type=Runtime"
+      attributes:
+        - attr: Uptime
+          field: uptime
+    - mbean: "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep"
+      attributes:
+        - attr: CollectionTime
+          field: gc.cms_collection_time
+          event: gc
+        - attr: CollectionCount
+          field: gc.cms_collection_count
+          event: gc
+    - mbean: "java.lang:type=Memory"
+      attributes:
+        - attr: HeapMemoryUsage
+          field: memory.heap_usage
+          event: heap
+        - attr: NonHeapMemoryUsage
+          field: memory.non_heap_usage
+          event: heap
+    - mbean: "java.lang:type=Threading"
+      attributes:
+        - attr: ThreadCount
+          field: thread.count
+          event: thread
+        - attr: DaemonThreadCount
+          field: thread.daemon
+          event: thread
+  jmx.instance: "{{ inventory_hostname }}"
+
+
+name: "{{ inventory_hostname }}"
+
+
+processors:
+- add_cloud_metadata: ~
+- add_host_metadata: ~
+
+
+monitoring.enabled: true
+
+
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_host }}"]
+  username: "{{ beats_user }}"
+  password: "{{ beats_password }}" #"${ES_PWD}"
+
+
+setup:
+  kibana:
+    host: "{{ kibana_host }}"
+    username: "{{ beats_user }}"
+    password: "{{ beats_password }}" #"${ES_PWD}"
+  ilm.overwrite: true
+
+
+#cloud.id: ""
+#cloud.auth: "{{ beats_user }}:${ES_PWD}"
