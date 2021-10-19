@@ -81,7 +81,7 @@ resource "aws_route53_record" "www" {
 resource "ec_deployment" "demo_ec" {
   name                   = "observability-demo"
   region                 = var.region
-  version                = "7.15.0"
+  version                = "7.15.1"
   deployment_template_id = "aws-io-optimized-v2"
 
   elasticsearch {}
