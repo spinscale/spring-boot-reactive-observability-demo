@@ -23,7 +23,7 @@ provider "aws" {
 # Create the SSH key pair
 resource "aws_lightsail_key_pair" "security_key_pair" {
   name       = "security_key_pair"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file("./ansible/philipp.pub")
 }
 
 
