@@ -7,7 +7,7 @@ heartbeat.monitors:
   check.response.status: 200
 - type: http
   name: Webserver
-  urls: ["http://localhost"]
+  urls: ["http://localhost:8080"]
   schedule: "@every 10s"
   timeout: 3s
   check.response.status: 200
