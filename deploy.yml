@@ -1,0 +1,31 @@
+- hosts: all
+  remote_user: ubuntu
+  become: true
+  gather_facts: yes
+
+
+  vars_files:
+    - .config.yml
+
+
+  tasks:
+    - name: Build the app locally
+      local_action: command ./gradlew clean check assemble
+      become: false
+
+    - name: Deploy the JAR
+      copy:
+        src: build/libs/spring-boot-reactive-demo-0.0.1-SNAPSHOT.jar
+        dest: /opt/spring-boot-reactive-demo.jar
+        mode: '0755'
+
+    - name: Configure the credentials for the app including trickery to remove the protocol from the host
+      lineinfile:
+        path: /etc/profile
+        regexp: '^export ELASTICSEARCH_URL='
+        line: "export ELASTICSEARCH_URL=https://{{ springboot_user }}:{{ springboot_password }}@{{ elasticsearch_host[8:] }}/"
+        state: present
+
+    - name: "Run the app on the host with:"
+      debug:
+        msg: java -jar /opt/spring-boot-reactive-demo.jar
