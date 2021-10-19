@@ -2,7 +2,7 @@
 # Options: nano_1_0, micro_1_0, small_1_0, medium_1_0, large_1_0
 # Override: -var 'size=your-size'
 variable "size" {
-  default = "micro_1_0"
+  default = "small_1_0"
 }
 
 
@@ -30,7 +30,7 @@ variable "zone_id" {}
 
 # Operating system on AWS Lightsail
 # Options: Only change this at your own risk; it will probably break things.
-# Override: -var 'operating_system=ubuntu_16_04'
+# Override: -var 'operating_system=ubuntu_20_04'
 variable "operating_system" {
   default = "ubuntu_20_04"
 }
