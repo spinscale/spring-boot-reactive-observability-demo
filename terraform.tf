@@ -95,8 +95,7 @@ resource "ec_deployment" "demo_ec" {
 # Generate random passwords for the app
 resource "random_password" "springboot" {
   length           = 16
-  special          = true
-  override_special = "_%@"
+  special          = false
 }
 resource "random_password" "beats" {
   length           = 16
