@@ -1,4 +1,11 @@
 terraform {
+  backend "remote" {
+    organization = "xeraa"
+    workspaces {
+      name = "elastic-community"
+    }
+  }
+
   required_providers {
     ec = {
       source  = "elastic/ec"
@@ -83,37 +90,34 @@ resource "ec_deployment" "demo_ec" {
 
   apm {}
 }
-output "elasticsearch_https_endpoint" {
-  value = ec_deployment.demo_ec.elasticsearch[0].https_endpoint
+
+
+# Generate random passwords for the app
+resource "random_password" "springboot" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
 }
-output "elastic_username" {
-  value = ec_deployment.demo_ec.elasticsearch_username
-}
-output "elastic_password" {
-  value = ec_deployment.demo_ec.elasticsearch_password
-  sensitive = true
-}
-output "elasticsearch_cloud_id" {
-  value = ec_deployment.demo_ec.elasticsearch[0].cloud_id
-}
-output "kibana_https_endpoint" {
-  value = ec_deployment.demo_ec.kibana[0].https_endpoint
-}
-output "apm_https_endpoint" {
-  value = ec_deployment.demo_ec.apm[0].https_endpoint
-}
-locals {
-  elastic-cloud = <<-EOT
-elasticsearch_password: ${ec_deployment.demo_ec.elasticsearch_password}
-elasticsearch_host: ${ec_deployment.demo_ec.elasticsearch[0].https_endpoint}
-elasticsearch_user: ${ec_deployment.demo_ec.elasticsearch_username}
-kibana_host: ${ec_deployment.demo_ec.kibana[0].https_endpoint}
-apm_host: ${ec_deployment.demo_ec.apm[0].https_endpoint}
-elastic_version: ${ec_deployment.demo_ec.version}
-  EOT
+resource "random_password" "beats" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
 }
 
-resource "local_file" "elastic_cloud_config" {
-  filename = "elastic-cloud.yml"
-  content  = local.elastic-cloud
+
+# Store all generated resources in a file for Ansible (and us)
+resource "local_file" "generated_config" {
+  filename = "${path.module}/.config.yml"
+  content  = <<-DOC
+    elasticsearch_password: ${ec_deployment.demo_ec.elasticsearch_password}
+    elasticsearch_host: ${ec_deployment.demo_ec.elasticsearch[0].https_endpoint}
+    elasticsearch_user: ${ec_deployment.demo_ec.elasticsearch_username}
+    kibana_host: ${ec_deployment.demo_ec.kibana[0].https_endpoint}
+    apm_host: ${ec_deployment.demo_ec.apm[0].https_endpoint}
+    apm_secret_token: ${ec_deployment.demo_ec.apm_secret_token}
+    elastic_version: ${ec_deployment.demo_ec.version}
+    beats_password: ${random_password.beats.result}
+    springboot_password: ${random_password.springboot.result}
+    domain: ${var.domain}
+    DOC
 }

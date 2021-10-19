@@ -46,4 +46,4 @@ terraform.tfstate.backup
 ### Secrets ###
 .env
 .envrc
-elastic-cloud.yml
+.config.yml
