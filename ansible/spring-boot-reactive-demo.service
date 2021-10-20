@@ -25,4 +25,5 @@ ExecStart=java -Xmx384m\
                -Delastic.apm.log_file=/var/log/apps/apm\
                -Delastic.apm.enable_log_correlation=true\
                -Delastic.apm.secret_token={{ apm_secret_token }}\
+               -Delastic.apm.enable_experimental_instrumentations=true
                -jar /opt/spring-boot-reactive-demo.jar
