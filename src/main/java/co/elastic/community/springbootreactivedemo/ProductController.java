@@ -1,5 +1,7 @@
 package co.elastic.community.springbootreactivedemo;
 
+import co.elastic.apm.api.ElasticApm;
+import co.elastic.apm.api.Span;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +55,8 @@ public class ProductController {
 
     @GetMapping(value = "/search")
     public Flux<Product> search(@RequestParam String q) {
-        return repository.findProducts(q);
+        final Span span = ElasticApm.currentTransaction().startSpan();
+        span.setName("my name");
+        return repository.findProducts(q).doOnTerminate(span::end);
     }
 }
