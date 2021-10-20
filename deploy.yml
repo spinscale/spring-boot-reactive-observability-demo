@@ -12,20 +12,45 @@
     - name: Build the app locally
       local_action: command ./gradlew clean check assemble
       become: false
+      changed_when: true
+
+    - name: Make sure that the logging directory exists
+      file:
+        path: /var/log/apps/
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: 0755
+
+    - name: Fetch the Elastic APM agent
+      get_url:
+        url: "https://search.maven.org/remotecontent?filepath=co/elastic/apm/elastic-apm-agent/{{ apm_java_version }}/elastic-apm-agent-{{ apm_java_version }}.jar"
+        dest: "/opt/elastic-apm-agent-{{ apm_java_version }}.jar"
+        mode: 0444
 
     - name: Deploy the JAR
       copy:
         src: build/libs/spring-boot-reactive-demo-0.0.1-SNAPSHOT.jar
-        dest: /opt/spring-boot-reactive-demo.jar
-        mode: '0755'
+        dest: "/opt/spring-boot-reactive-demo.jar"
+        owner: ubuntu
+        group: ubuntu
+        mode: 0755
 
-    - name: Configure the credentials for the app including trickery to remove the protocol from the host
-      lineinfile:
-        path: /etc/profile
-        regexp: '^export ELASTICSEARCH_URL='
-        line: "export ELASTICSEARCH_URL=https://{{ springboot_user }}:{{ springboot_password }}@{{ elasticsearch_host[8:] }}/"
-        state: present
+    - name: Provide a service file to run it as a service
+      template:
+        src: ansible/spring-boot-reactive-demo.service
+        dest: /lib/systemd/system/spring-boot-reactive-demo.service
+        owner: root
+        group: root
+        mode: 0400
 
-    - name: "Run the app on the host with:"
-      debug:
-        msg: java -jar /opt/spring-boot-reactive-demo.jar
+    - name: Restart the JAR, make sure it autostarts, and reload the configuration
+      systemd: name=spring-boot-reactive-demo state=restarted enabled=yes daemon_reload=yes
+
+    - name: Wait for the Java application to start up
+      pause: seconds=30
+
+    - name: Check if the service is available
+      uri: url="https://{{ inventory_hostname }}/health"
+      register: response
+      ignore_errors: yes
