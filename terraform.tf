@@ -114,6 +114,7 @@ resource "local_file" "generated_config" {
     kibana_host: ${ec_deployment.demo_ec.kibana[0].https_endpoint}
     apm_host: ${ec_deployment.demo_ec.apm[0].https_endpoint}
     apm_secret_token: ${ec_deployment.demo_ec.apm_secret_token}
+    apm_java_version: 1.26.0
     elastic_version: ${ec_deployment.demo_ec.version}
     beats_user: beats
     beats_password: ${random_password.beats.result}
