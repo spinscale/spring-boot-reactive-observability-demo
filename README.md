@@ -46,7 +46,7 @@ like this:
 ELASTICSEARCH_URL=https://username:password@localhost:9200/
 ```
 
-Either run `./gradlew bootRun` 
+Either run `./gradlew bootRun`
 
 ```
 ./gradlew bootRun
@@ -64,6 +64,15 @@ If you are using Elastic Cloud as described earlier on, you can run:
 ```sh
 ELASTICSEARCH_URL=https://springboot:springb00t@elastic-bys.es.europe-west1.gcp.cloud.es.io:9243/ ./gradlew bootRun
 ```
+
+### Automation
+
+Backed by Terraform Cloud, the Terraform run generates a file *.config.yml* that Ansible will then use. The available playbooks are (replace with your user for which the public SSH key was added):
+
+* `ansible-playbook --user philipp configure.yml`
+* `ansible-playbook --user philipp deploy.yml`
+
+Sidenote: With `ansible-playbook --user philipp deploy.yml --start-at-task="Provide a service file to run it as a service"` you can start the run at any task and skip unnecessary steps.
 
 ## The API
 
