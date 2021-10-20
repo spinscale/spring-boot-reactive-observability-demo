@@ -3,13 +3,15 @@ filebeat.modules:
 - module: nginx
 - module: system
 
+
 filebeat.inputs:
 - type: log
-  paths: /tmp/app-spring-boot-reactive-demo.json
+  paths: /var/log/apps/app-spring-boot-reactive-demo.json
   json.keys_under_root: true
   json.overwrite_keys: true
   json.add_error_key: true
   json.expand_keys: true
+
 
 name: "{{ inventory_hostname }}"
 
