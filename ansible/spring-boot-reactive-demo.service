@@ -11,11 +11,9 @@ Environment="ELASTICSEARCH_URL=https://{{ springboot_user }}:{{ springboot_passw
 ExecStart=java -Xmx384m\
                -DLOG_PATH=/var/log/apps\
                -DSERVER_PORT=8080\
-               -javaagent:/opt/elastic-apm-agent-{{ apm_java_version }}.jar\
                -Delastic.apm.service_name=spring-boot-reactive-demo\
                -Delastic.apm.application_packages=co.elastic.community.springbootreactivedemo\
                -Delastic.apm.stack_trace_limit=150\
-               -Delastic.apm.trace_methods=co.elastic.community.*#*\
                -Delastic.apm.environment=production\
                -Delastic.apm.sample_rate=1.0\
                -Delastic.apm.capture_body=all\

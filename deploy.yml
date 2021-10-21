@@ -21,12 +21,6 @@
         group: ubuntu
         mode: 0755
 
-    - name: Fetch the Elastic APM agent
-      get_url:
-        url: "https://search.maven.org/remotecontent?filepath=co/elastic/apm/elastic-apm-agent/{{ apm_java_version }}/elastic-apm-agent-{{ apm_java_version }}.jar"
-        dest: "/opt/elastic-apm-agent-{{ apm_java_version }}.jar"
-        mode: 0444
-
     - name: Deploy the JAR
       copy:
         src: build/libs/spring-boot-reactive-demo-0.0.1-SNAPSHOT.jar
