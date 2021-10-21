@@ -26,9 +26,9 @@ dependencies {
 	// json logging
 	implementation 'co.elastic.logging:logback-ecs-encoder:1.1.0'
 	// APM agent
-	implementation 'co.elastic.apm:apm-agent-attach:1.26.0'
-	implementation 'co.elastic.apm:apm-agent-api:1.26.0'
-	implementation 'co.elastic.apm:elastic-apm-agent:1.26.0'
+	implementation 'co.elastic.apm:apm-agent-attach:1.25.0'
+	implementation 'co.elastic.apm:apm-agent-api:1.25.0'
+	implementation 'co.elastic.apm:elastic-apm-agent:1.25.0'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
