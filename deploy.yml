@@ -44,6 +44,6 @@
       pause: seconds=30
 
     - name: Check if the service is available
-      uri: url="https://{{ inventory_hostname }}/health"
+      uri: url="https://{{ inventory_hostname }}/actuator/health"
       register: response
       ignore_errors: yes
