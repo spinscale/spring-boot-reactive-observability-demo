@@ -1,7 +1,5 @@
 package co.elastic.community.springbootreactivedemo;
 
-import co.elastic.apm.api.ElasticApm;
-import co.elastic.apm.api.Span;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.opentelemetry.extension.annotations.SpanAttribute;
+import io.opentelemetry.extension.annotations.WithSpan;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -53,10 +54,9 @@ public class ProductController {
         return repository.deleteById(id);
     }
 
+    @WithSpan
     @GetMapping(value = "/search")
-    public Flux<Product> search(@RequestParam String q) {
-        final Span span = ElasticApm.currentTransaction().startSpan();
-        span.setName("my name");
-        return repository.findProducts(q).doOnTerminate(span::end);
+    public Flux<Product> search(@SpanAttribute("q") @RequestParam String q) {
+        return repository.findProducts(q);
     }
 }

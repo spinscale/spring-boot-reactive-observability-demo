@@ -1,7 +1,5 @@
 package co.elastic.community.springbootreactivedemo;
 
-import co.elastic.apm.api.CaptureSpan;
-import co.elastic.apm.api.Traced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,7 +12,6 @@ public class RunningBackgroundTask {
 
     private static final Logger log = LoggerFactory.getLogger(RunningBackgroundTask.class);
 
-    @Traced
     @Scheduled(fixedRate = 1000 * 60) // once per minute
     public void executeTask() {
         final long start = System.nanoTime();
@@ -26,7 +23,6 @@ public class RunningBackgroundTask {
         log.info("Finished background task in [{}]s", Duration.ofNanos(end - start).toSeconds());
     }
 
-    @CaptureSpan
     private void sleep(int seconds) {
         try {
             Thread.sleep(seconds * 1000);
