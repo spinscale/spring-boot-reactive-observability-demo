@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Elastic Byte</title>
+  <link rel="stylesheet" href="{{url_for('static',filename='css/main_min.css')}}">
+</head>
+
+<body>
+  <div class="bg-gray-700 px-3 py-1">
+    <h2 class="text-3xl font-light text-white m-0">Spring Boot Observability 2021</h2>
+  </div>
+  {% block content %}
+
+  <div class="justify-items-center">
+    <div class="grid gap-8 grid-cols-3 mt-5 ">
+      <div
+        class="transition duration-500 ease-in-out flex py-3 px-2 hover:bg-blue-400 transform hover:-translate-y-1 hover:scale-110 hover:text-white hover:shadow-none hover:rounded border border-gray-300 shadow-lg">
+        <div class="w-3/5 mr-0">
+          <h2 class="text-gray-800 font-bold">{{ data.name }}</h2>
+          <p>{{ data.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock %}
+</body>
+
+</html>
