@@ -9,10 +9,20 @@ Restart=always
 RestartSec=5
 Environment="ELASTICSEARCH_URL=https://{{ springboot_user }}:{{ springboot_password }}@{{ elasticsearch_host[8:] }}/"
 ExecStart=java -Xmx384m\
+               -DLOG_PATH=/var/log/apps\
                -DSERVER_PORT=8080\
-               -Dotel.exporter.otlp.endpoint={{ apm_host }}\
-               -Dotel.exporter.otlp.headers="Authorization=Bearer {{ apm_secret_token }}"\
-               -Dotel.service.name=spring-boot-reactive-demo\
-               -javaagent:/opt/opentelemetry-javaagent-all-1.7.0.jar\
-               -jar /opt/spring-boot-reactive-demo.jar\
+               -Delastic.apm.service_name=spring-boot-reactive-demo\
+               -Delastic.apm.application_packages=co.elastic.community.springbootreactivedemo\
+               -Delastic.apm.stack_trace_limit=150\
+               -Delastic.apm.environment=production\
+               -Delastic.apm.sample_rate=1.0\
+               -Delastic.apm.capture_body=all\
+               -Delastic.apm.span_frames_min_duration=5ms\
+               -Delastic.apm.server_urls={{ apm_host }}\
+               -Delastic.apm.transaction_ignore_urls=/health,/metrics*,/jolokia\
+               -Delastic.apm.log_file=/var/log/apps/apm\
+               -Delastic.apm.enable_log_correlation=true\
+               -Delastic.apm.secret_token={{ apm_secret_token }}\
+               -Delastic.apm.enable_experimental_instrumentations=true \
+               -jar /opt/spring-boot-reactive-demo.jar \
                --spring.profiles.active=prod
