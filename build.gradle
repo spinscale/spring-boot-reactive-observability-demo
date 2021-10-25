@@ -22,6 +22,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	// /actuator/prometheus endpoint to scrape
+	implementation 'io.micrometer:micrometer-registry-prometheus:1.7.5'
 
 	// json logging
 	implementation 'co.elastic.logging:logback-ecs-encoder:1.1.0'
