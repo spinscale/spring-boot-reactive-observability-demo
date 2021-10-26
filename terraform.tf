@@ -105,6 +105,11 @@ resource "random_password" "beats" {
 
 
 # Store all generated resources in a file for Ansible (and us)
+# Sadly the following settings don't exist yet in
+# https://registry.terraform.io/providers/elastic/ec/latest/docs/data-sources/ec_deployment
+# See https://github.com/elastic/terraform-provider-ec/issues/393
+#    fleet_host: ${ec_deployment.demo_ec.fleet[0].https_endpoint}
+#    fleet_secret_token: ??? We should call POST /enrollment-api-keys to generate it?
 resource "local_file" "generated_config" {
   filename = "${path.module}/.config.yml"
   content  = <<-DOC
