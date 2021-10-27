@@ -1,0 +1,6 @@
+{
+  "name": "spring-boot-reactive-demo-synthetics",
+  "dependencies": {
+    "@elastic/synthetics": "1.0.0-beta.16"
+  }
+}

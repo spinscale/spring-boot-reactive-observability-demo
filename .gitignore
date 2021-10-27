@@ -50,3 +50,6 @@ terraform.tfstate.backup
 .env
 .envrc
 .config.yml
+
+### synthetics ###
+synthetics/node_modules
