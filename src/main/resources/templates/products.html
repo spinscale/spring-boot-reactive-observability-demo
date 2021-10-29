@@ -31,5 +31,17 @@
 
 </div>
 
+<script src="elastic-apm-rum.umd.min.js"></script>
+<script th:inline="javascript">
+  /*[# th:if="${@environment.getProperty('elastic.apm.server_urls')}"]*/
+  elasticApm.init({
+    serviceName: 'xeraa-wtf',
+    serverUrl: [[${@environment.getProperty('elastic.apm.server_urls')}]],
+    serviceVersion: '1.0.0',
+    environment: [[${@environment.getActiveProfiles()[0]}]],
+  })
+  /*[/]*/
+</script>
+
 </body>
 </html>
