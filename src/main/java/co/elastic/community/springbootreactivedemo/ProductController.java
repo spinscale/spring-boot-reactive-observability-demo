@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 /*
  * A controller expecting to receive JSON to manage products in the Elasticsearch Index
@@ -45,7 +46,9 @@ public class ProductController {
     }
 
     /**
-     * Creates a product and extracts its id from provided the body
+     * Creates a product and extracts its id from provided the body.
+     * If the id is not provided, it will be generated from the current time in ms
+     * number of ms since the beginning of 2021
      * @param product The product to add
      * @return The product that has been added
      * @throws MalformedURLException if the image url is malformed
@@ -54,7 +57,7 @@ public class ProductController {
     public Mono<Product> createProduct(@RequestBody Product product) throws MalformedURLException {
         // check that the id is provided
         if (product.getId() == null || product.getId().isBlank()) {
-            throw new IllegalArgumentException("A product must have an id");
+            product.setId("" + (System.currentTimeMillis() - 1640995200000L));
         }
         product.setCreated(ZonedDateTime.now(ZoneOffset.UTC));
         // cheap parsing check, this fails with an exception, if the product image url cannot be parsed!
