@@ -1,16 +1,29 @@
 heartbeat.monitors:
+- type: icmp
+  name: ICMP domain
+  hosts: ["{{ domain }}"]
+  schedule: '*/5 * * * * * *'
+- type: tcp
+  name: TCP Elasticsearch
+  hosts: ["{{ elasticsearch_host[8:] }}"]
+  schedule: '@every 5s'
 - type: http
-  name: Webserver
+  name: Webserver localhost
+  urls: ["http://localhost:8080/actuator/health"]
+  schedule: "@every 10s"
+  timeout: 3s
+  check.response.status: 200
+- type: http
+  name: Webserver domain
   urls: ["https://{{ domain }}"]
   schedule: "@every 10s"
   timeout: 3s
   check.response.status: 200
-- type: http
-  name: Webserver
-  urls: ["http://localhost:8080"]
-  schedule: "@every 10s"
-  timeout: 3s
-  check.response.status: 200
+  body:
+    - "Image"
+    - "My Product"
+heartbeat.scheduler:
+  limit: 10
 
 
 name: "{{ inventory_hostname }}"

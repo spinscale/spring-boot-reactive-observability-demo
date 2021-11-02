@@ -56,6 +56,12 @@ resource "aws_lightsail_instance_public_ports" "security_ports" {
     from_port = 443
     to_port   = 443
   }
+  # ICMP
+  port_info {
+    protocol  = "icmp"
+    from_port = 8
+    to_port   = 0
+  }
 }
 resource "aws_route53_record" "apex" {
   zone_id = var.zone_id
