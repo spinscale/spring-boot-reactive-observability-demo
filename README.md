@@ -79,8 +79,13 @@ Sidenote: With `ansible-playbook --user philipp deploy.yml --start-at-task="Prov
 ### Save product
 
 ```
+# Provide the id as part of the URL
 curl -X PUT localhost:8080/products/product/123 \
   --header "Content-Type: application/json" -d '{"name":"My Product", "description" : "A wonderful product to test out", "tags" : ["sports"], "imageUrl":"https://images.contentstack.io/v3/assets/bltefdd0b53724fa2ce/blt280217a63b82a734/5bbdaacf63ed239936a7dd56/elastic-logo.svg" }'
+
+# Provide the id within the body
+curl -X POST localhost:8080/products/product \
+  --header "Content-Type: application/json" -d '{"id": "123", "name":"My Product", "description" : "A wonderful product to test out", "tags" : ["sports"], "imageUrl":"https://images.contentstack.io/v3/assets/bltefdd0b53724fa2ce/blt280217a63b82a734/5bbdaacf63ed239936a7dd56/elastic-logo.svg" }'
 ```
 
 ### Get product
