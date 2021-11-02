@@ -56,7 +56,7 @@ resource "aws_lightsail_instance_public_ports" "security_ports" {
     from_port = 443
     to_port   = 443
   }
-  # ICMP
+  # ICMP ping
   port_info {
     protocol  = "icmp"
     from_port = 8
@@ -127,6 +127,7 @@ resource "local_file" "generated_config" {
     apm_secret_token: ${ec_deployment.demo_ec.apm_secret_token}
     apm_java_version: 1.26.0
     elastic_version: ${ec_deployment.demo_ec.version}
+    cloud_alias: ${ec_deployment.demo_ec.alias}
     beats_user: beats
     beats_password: ${random_password.beats.result}
     springboot_user: springboot

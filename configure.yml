@@ -176,15 +176,45 @@
     - name: Get the elastic-agent
       apt: deb=https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-{{ elastic_version }}-amd64.deb force_apt_get=yes
 
-    # We need to get an enrollment_token from Kibana
-#    - name: Enroll elastic-agent
-#      command: elastic-agent enroll --url={{ fleet_host }} --enrollment-token={{ fleet_token }} 
+    - name: Create an enrollment_token from Kibana for elastic-agent (will fail if it already exists)
+      uri:
+        url: "{{kibana_host}}/api/fleet/enrollment-api-keys"
+        body_format: json
+        method: POST
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        headers:
+          kbn-xsrf: fleet
+        body:
+          name: "{{ domain}}"
+          policy_id: "c7702340-2c9f-11ec-8cf1-d11a3f689aad"
+        status_code:
+          - 200
+          - 201
+      ignore_errors: yes
 
-#    - name: Enable elastic-agent
-#      service: name=elastic-agent state=enabled
+    - name: Get the enrollment_token from Kibana for elastic-agent
+      uri:
+        url: "{{kibana_host}}/api/fleet/enrollment-api-keys?kuery=name%20%3A%20{{ domain }}*"
+        body_format: json
+        method: GET
+        user: "{{ elasticsearch_user }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        headers:
+          kbn-xsrf: fleet
+        status_code:
+          - 200
+      register: fleet_token
 
-#    - name: Start elastic-agent
-#      service: name=elastic-agent state=started
+    # TODO once we have the fleet_host, we don't need the replace hack for apm_host any more
+    - name: Enroll the elastic-agent and force it to overwrite any previous config
+      command: elastic-agent enroll --url="https://{{ cloud_alias }}.fleet.{{ apm_host.split('.')[2:4]|join('.') }}.found.io:443" --enrollment-token={{ fleet_token.json.list[0].api_key }} --force
+
+    - name: Restart and make sure the elastic-agent autostarts
+      service: name=elastic-agent state=restarted enabled=yes
+
 
     # Beats
     - name: Get the Beats
