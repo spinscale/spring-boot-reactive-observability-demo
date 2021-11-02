@@ -173,8 +173,18 @@
 
 
     # Agent
+    - name: Get the elastic-agent
+      apt: deb=https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-{{ elastic_version }}-amd64.deb force_apt_get=yes
 
+    # We need to get an enrollment_token from Kibana
+#    - name: Enroll elastic-agent
+#      command: elastic-agent enroll --url={{ fleet_host }} --enrollment-token={{ fleet_token }} 
 
+#    - name: Enable elastic-agent
+#      service: name=elastic-agent state=enabled
+
+#    - name: Start elastic-agent
+#      service: name=elastic-agent state=started
 
     # Beats
     - name: Get the Beats
