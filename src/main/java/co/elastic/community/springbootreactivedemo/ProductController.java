@@ -3,16 +3,15 @@ package co.elastic.community.springbootreactivedemo;
 import co.elastic.apm.api.ElasticApm;
 import co.elastic.apm.api.Span;
 import co.elastic.apm.api.Traced;
-
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -38,6 +37,25 @@ public class ProductController {
     public Mono<Product> createProduct(@PathVariable String id,
                                               @RequestBody Product product) throws MalformedURLException {
         product.setId(id);
+        product.setCreated(ZonedDateTime.now(ZoneOffset.UTC));
+        // cheap parsing check, this fails with an exception, if the product image url cannot be parsed!
+        // could be done via annotation validation as well
+        new URL(product.getImageUrl());
+        return repository.save(product);
+    }
+
+    /**
+     * Creates a product and extracts its id from provided the body
+     * @param product The product to add
+     * @return The product that has been added
+     * @throws MalformedURLException if the image url is malformed
+     */
+    @PostMapping("/product")
+    public Mono<Product> createProduct(@RequestBody Product product) throws MalformedURLException {
+        // check that the id is provided
+        if (product.getId() == null || product.getId().isBlank()) {
+            throw new IllegalArgumentException("A product must have an id");
+        }
         product.setCreated(ZonedDateTime.now(ZoneOffset.UTC));
         // cheap parsing check, this fails with an exception, if the product image url cannot be parsed!
         // could be done via annotation validation as well
