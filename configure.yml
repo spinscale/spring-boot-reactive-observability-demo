@@ -83,8 +83,10 @@
       service: name=ssh state=restarted
 
 
-    # Elasticsearch
+    # App privileges for Elasticsearch
     - name: Create the Elasticsearch role for the app
+      delegate_to: 127.0.0.1
+      become: false
       uri:
         url: "{{elasticsearch_host}}/_security/role/{{ springboot_user }}-role"
         body_format: json
@@ -105,6 +107,8 @@
           - 201
 
     - name: Create the Elasticsearch user for the app
+      delegate_to: 127.0.0.1
+      become: false
       uri:
         url: "{{elasticsearch_host}}/_security/user/{{ springboot_user }}"
         body_format: json
@@ -309,15 +313,15 @@
       service: name=nginx state=restarted enabled=yes
 
     - name: Check HTTP
+      delegate_to: 127.0.0.1
+      become: false
+      retries: 3
+      delay: 2
       uri:
         url: "http://{{ inventory_hostname }}"
         follow_redirects: none
         status_code: 301
       register: response
-      retries: 3
-      delay: 2
-      delegate_to: 127.0.0.1
-      become: false
 
     - name: Fail if HTTP is not being redirected to HTTPS
       fail:
