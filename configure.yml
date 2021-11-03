@@ -186,7 +186,12 @@
 
     - name: Restart and make sure the elastic-agent autostarts
       service: name=elastic-agent state=restarted enabled=yes
+
+
+    # Beats
     - name: Create the Elasticsearch role for Beats
+      delegate_to: 127.0.0.1
+      become: false
       uri:
         url: "{{elasticsearch_host}}/_security/role/{{ beats_user }}-role"
         body_format: json
@@ -196,10 +201,10 @@
         force_basic_auth: true
         body:
           cluster:
-            - all #TODO make this more fine grained
+            - monitor
+            - manage #Could be more fine grained if we split up installation and data collection
           indices:
             - names:
-                #- ".kibana*"
                 - "*beat-*"
                 - "logs-*"
                 - "metrics-*"
@@ -222,6 +227,8 @@
           - 201
 
     - name: Create the Elasticsearch user for Beats
+      delegate_to: 127.0.0.1
+      become: false
       uri:
         url: "{{elasticsearch_host}}/_security/user/{{ beats_user }}"
         body_format: json
@@ -233,11 +240,15 @@
           password: "{{ beats_password }}"
           roles:
             - "{{ beats_user }}-role"
+            - filebeat_setup
+            - kibana_admin
+            - ingest_admin
+            - beats_admin
+            - machine_learning_admin
         status_code:
           - 200
           - 201
 
-    # Beats
     - name: Get the Beats
       apt: deb=https://artifacts.elastic.co/downloads/beats/{{ item }}/{{ item }}-{{ elastic_version }}-amd64.deb force_apt_get=yes
       loop: "{{ beats }}"
@@ -255,7 +266,7 @@
         dest: /tmp/cred
         line: "{{ beats_password }}"
         state: present
-        create: yes
+        create: true
         mode: 0600
 
     - name: Set the password in the Beats keystore files
@@ -273,7 +284,6 @@
       - filebeat
       - metricbeat
       - packetbeat
-      ignore_errors: yes #TODO missing Filebeat permission for ML
 
     - name: Restart and make sure the Beats autostart
       service: name={{ item }} state=restarted enabled=yes
